@@ -6,6 +6,17 @@
 <body>
     <h1>My To-Do List</h1>
 
+    <!-- Filter Buttons -->
+    <div>
+        <strong>Filter:</strong>
+        <a href="?filter=all" {% if filter_option == 'all' %}style="font-weight:bold"{% endif %}>All</a> |
+        <a href="?filter=completed" {% if filter_option == 'completed' %}style="font-weight:bold"{% endif %}>Completed</a> |
+        <a href="?filter=incomplete" {% if filter_option == 'incomplete' %}style="font-weight:bold"{% endif %}>Incomplete</a>
+    </div>
+
+    <br>
+
+    <!-- Add Task Form -->
     <form method="POST">
         {% csrf_token %}
         {{ form.as_p }}
@@ -14,9 +25,11 @@
 
     <hr>
 
+    <!-- Task List -->
     <ul>
         {% for task in tasks %}
             <li>
+                <!-- Toggle Button -->
                 <form action="{% url 'toggle_task' task.id %}" method="post" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit">
@@ -26,6 +39,7 @@
 
                 {{ task.title }}
 
+                <!-- Delete Button -->
                 <form action="{% url 'delete_task' task.id %}" method="post" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit">🗑</button>
