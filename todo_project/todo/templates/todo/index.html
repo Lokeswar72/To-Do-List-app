@@ -1,53 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>To-Do List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body>
-    <h1>My To-Do List</h1>
+<body class="bg-gradient-to-r from-indigo-100 to-purple-100 min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-2xl">
+        <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">📝 My To-Do List</h1>
 
-    <!-- Filter Buttons -->
-    <div>
-        <strong>Filter:</strong>
-        <a href="?filter=all" {% if filter_option == 'all' %}style="font-weight:bold"{% endif %}>All</a> |
-        <a href="?filter=completed" {% if filter_option == 'completed' %}style="font-weight:bold"{% endif %}>Completed</a> |
-        <a href="?filter=incomplete" {% if filter_option == 'incomplete' %}style="font-weight:bold"{% endif %}>Incomplete</a>
+        <!-- Filter Buttons -->
+        <div class="flex justify-center gap-4 mb-6 text-sm">
+            <a href="?filter=all" class="px-4 py-2 rounded-full {% if filter_option == 'all' %}bg-indigo-600 text-white{% else %}bg-gray-200 text-gray-700{% endif %} hover:bg-indigo-500 hover:text-white transition">All</a>
+            <a href="?filter=completed" class="px-4 py-2 rounded-full {% if filter_option == 'completed' %}bg-green-500 text-white{% else %}bg-gray-200 text-gray-700{% endif %} hover:bg-green-400 hover:text-white transition">Completed</a>
+            <a href="?filter=incomplete" class="px-4 py-2 rounded-full {% if filter_option == 'incomplete' %}bg-yellow-500 text-white{% else %}bg-gray-200 text-gray-700{% endif %} hover:bg-yellow-400 hover:text-white transition">Incomplete</a>
+        </div>
+
+        <!-- Add Task Form -->
+        <form method="POST" class="grid sm:grid-cols-3 gap-4 mb-6">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="Enter a task..." class="col-span-2 px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+            <input type="date" name="due_date" class="px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+            <select name="priority" class="px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+                <option value="">Priority</option>
+                <option value="High">🔴 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+            </select>
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition sm:col-span-3">Add</button>
+        </form>
+
+        <hr class="mb-6">
+
+        <!-- Task List -->
+        <ul class="space-y-4">
+            {% for task in tasks %}
+                <li class="flex items-center justify-between bg-gray-50 p-4 rounded-xl shadow hover:shadow-md transition">
+                    {% if edit_id == task.id %}
+                        <!-- Edit Mode -->
+                        <form action="{% url 'edit_task' task.id %}" method="post" class="flex flex-1 items-center gap-4">
+                            {% csrf_token %}
+                            {{ edit_form.title }}
+                            {{ edit_form.due_date }}
+                            {{ edit_form.priority }}
+                            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">Save</button>
+                            <a href="{% url 'index' %}" class="text-gray-500 hover:text-gray-700 px-2 py-2">Cancel</a>
+                        </form>
+                    {% else %}
+                        <!-- Display Mode -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                            <div class="flex items-center gap-3">
+                                <form action="{% url 'toggle_task' task.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-2xl">
+                                        {% if task.completed %}✅{% else %}⬜{% endif %}
+                                    </button>
+                                </form>
+                                <div>
+                                    <span class="text-lg {% if task.completed %}line-through text-gray-400{% else %}text-gray-800{% endif %}">
+                                        {{ task.title }}
+                                    </span>
+                                    <div class="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                                        {% if task.due_date %}<span>📅 {{ task.due_date }}</span>{% endif %}
+                                        {% if task.priority %}
+                                            {% if task.priority == 'High' %}
+                                                <span class="text-red-600 font-semibold">🔴 High</span>
+                                            {% elif task.priority == 'Medium' %}
+                                                <span class="text-yellow-600 font-semibold">🟡 Medium</span>
+                                            {% elif task.priority == 'Low' %}
+                                                <span class="text-green-600 font-semibold">🟢 Low</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit / Delete Buttons -->
+                        <div class="flex items-center gap-2" x-data="{ open: false }">
+                            <a href="{% url 'edit_task' task.id %}" class="text-yellow-500 hover:text-yellow-700 text-xl transition">✏️</a>
+                            <button @click="open = true" class="text-red-500 hover:text-red-700 text-xl transition">🗑</button>
+
+                            <!-- Delete Modal -->
+                            <div x-show="open" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm" @click.away="open = false">
+                                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Delete</h2>
+                                    <p class="text-gray-600 mb-6">Are you sure you want to delete <strong>{{ task.title }}</strong>?</p>
+                                    <div class="flex justify-end gap-4">
+                                        <button @click="open = false" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800">
+                                            Cancel
+                                        </button>
+                                        <form action="{% url 'delete_task' task.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li class="text-center text-gray-500 text-lg">No tasks yet.</li>
+            {% endfor %}
+        </ul>
     </div>
-
-    <br>
-
-    <!-- Add Task Form -->
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Add Task</button>
-    </form>
-
-    <hr>
-
-    <!-- Task List -->
-    <ul>
-        {% for task in tasks %}
-            <li>
-                <!-- Toggle Button -->
-                <form action="{% url 'toggle_task' task.id %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit">
-                        {% if task.completed %}✅{% else %}❌{% endif %}
-                    </button>
-                </form>
-
-                {{ task.title }}
-
-                <!-- Delete Button -->
-                <form action="{% url 'delete_task' task.id %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit">🗑</button>
-                </form>
-            </li>
-        {% empty %}
-            <li>No tasks yet.</li>
-        {% endfor %}
-    </ul>
 </body>
 </html>

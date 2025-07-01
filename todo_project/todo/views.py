@@ -3,6 +3,25 @@ from .models import Task
 from .forms import TaskForm
 from django.shortcuts import get_object_or_404
 
+
+def edit_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            return redirect('index')
+    else:
+        form = TaskForm(instance=task)
+    tasks = Task.objects.all()
+    return render(request, 'todo/index.html', {
+        'form': TaskForm(),
+        'tasks': tasks,
+        'edit_form': form,
+        'edit_id': task_id
+    })
+
+
 def index(request):
     filter_option = request.GET.get('filter', 'all')
 
