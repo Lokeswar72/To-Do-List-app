@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To-Do List</title>
+</head>
+<body>
+    <h1>My To-Do List</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add Task</button>
+    </form>
+
+    <hr>
+
+    <ul>
+        {% for task in tasks %}
+            <li>
+                <form action="{% url 'toggle_task' task.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">
+                        {% if task.completed %}✅{% else %}❌{% endif %}
+                    </button>
+                </form>
+
+                {{ task.title }}
+
+                <form action="{% url 'delete_task' task.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">🗑</button>
+                </form>
+            </li>
+        {% empty %}
+            <li>No tasks yet.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
