@@ -4,6 +4,18 @@ from .forms import TaskForm
 from django.db.models import Case, When
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def reorder_tasks(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        for idx, task_id in enumerate(data['order']):
+            Task.objects.filter(id=task_id).update(position=idx)
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'invalid'}, status=400)
 
 
 @require_POST
@@ -33,8 +45,7 @@ def index(request):
     filter_option = request.GET.get('filter', 'all')
     sort_option = request.GET.get('sort', 'default')
 
-    tasks = Task.objects.all()
-
+    tasks = Task.objects.all().order_by('position')
     # Apply filter
     if filter_option == 'completed':
         tasks = tasks.filter(completed=True)
@@ -129,12 +140,14 @@ def edit_task(request, task_id):
 
 def toggle_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-    task.completed = not task.completed
-    task.save()
+    if request.method == 'POST':
+        task.completed = not task.completed
+        task.save()
     return redirect('index')
 
 
 def delete_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
-    task.delete()
+    if request.method == 'POST':
+        task = get_object_or_404(Task, id=task_id)
+        task.delete()
     return redirect('index')

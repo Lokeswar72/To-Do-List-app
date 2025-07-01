@@ -1,16 +1,17 @@
 from django.db import models
 
+# models.py
 class Task(models.Model):
-    PRIORITY_CHOICES = [
+    title = models.CharField(max_length=200)
+    completed = models.BooleanField(default=False)
+    due_date = models.DateField(null=True, blank=True)
+    priority = models.CharField(max_length=10, choices=[
         ('High', 'High'),
         ('Medium', 'Medium'),
-        ('Low', 'Low'),
-    ]
+        ('Low', 'Low')
+    ], blank=True)
+    position = models.PositiveIntegerField(default=0)  # New field
 
-    title = models.CharField(max_length=255)
-    completed = models.BooleanField(default=False)
-    due_date = models.DateField(null=True, blank=True)  # Existing field
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, null=True, blank=True)  # NEW
+    class Meta:
+        ordering = ['position']  # Default sort
 
-    def __str__(self):
-        return self.title

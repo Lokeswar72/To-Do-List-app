@@ -7,4 +7,6 @@ urlpatterns = [
     path('toggle/<int:task_id>/', views.toggle_task, name='toggle_task'),
     path('delete/<int:task_id>/', views.delete_task, name='delete_task'),
     path('bulk-action/', views.bulk_action, name='bulk_action'),  # 👈 Add this
+    path('reorder/', views.reorder_tasks, name='reorder_tasks'),
+
 ]
